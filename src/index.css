@@ -1,0 +1,77 @@
+/* ── Reset ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; width: 100%; }
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  color: #0F172A;
+  background: #F1F5F9;
+  -webkit-font-smoothing: antialiased;
+}
+button { font-family: inherit; cursor: pointer; border: none; background: none; padding: 0; }
+input, textarea { font-family: inherit; font-size: inherit; border: none; outline: none; background: none; }
+a { color: inherit; text-decoration: none; }
+
+/* ── Scrollbar ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
+
+/* ── CSS Variables ─────────────────────────────────────────────────── */
+:root {
+  --color-bg:           #F1F5F9;
+  --color-bg-chat:      #FAFAFA;
+  --color-white:        #FFFFFF;
+  --color-border:       #E5E7EB;
+  --color-border-mid:   #CBD5E1;
+  --color-text-dark:    #0F172A;
+  --color-text-mid:     #374151;
+  --color-text-base:    #6B7280;
+  --color-text-light:   #9CA3AF;
+  --color-text-xlight:  #CBD5E1;
+  --color-black:        #111827;
+  --color-success:      #16A34A;
+  --color-success-light:#F0FDF4;
+  --color-success-border:#86EFAC;
+  --color-warning:      #D97706;
+  --color-warning-dark: #92400E;
+  --color-warning-light:#FFFBEB;
+  --color-warning-border:#FDE68A;
+  --color-danger:       #DC2626;
+  --color-danger-light: #FEF2F2;
+  --color-danger-border:#FCA5A5;
+  --color-chunk-hl:     #FEF08A;
+  --sidebar-width:      232px;
+  --panel-width:        360px;
+  --header-height:      64px;
+  --radius-app:         14px;
+  --transition-fast:    0.15s ease;
+  --transition-panel:   0.25s ease;
+}
+
+/* ── Mobile global fixes ────────────────────────────────────────── */
+/* Prevent iOS Safari zoom on input focus */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* Safe area insets for iPhone notch/home bar */
+@supports (padding: max(0px)) {
+  .chat-page {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .new-chat-page__footer {
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Responsive panel width */
+@media (min-width: 769px) and (max-width: 1100px) {
+  :root { --panel-width: 320px; }
+}
+@media (max-width: 768px) {
+  :root { --panel-width: 100vw; }
+}
