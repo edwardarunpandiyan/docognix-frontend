@@ -1,0 +1,126 @@
+/* ── Status badge ──────────────────────────────────────────────── */
+.doc-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  white-space: nowrap;
+  border: none;
+}
+
+.doc-status-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
+
+.doc-status-badge--pulse {
+  animation: pulse-badge 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.75); }
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.7; }
+}
+
+/* ── Processing pipeline bar ───────────────────────────────────── */
+.doc-processing-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  padding: 8px 4px 4px;
+  width: 100%;
+}
+
+.doc-processing-bar__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+
+.doc-processing-bar__node {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  border: 2px solid #E5E7EB;
+  background: #fff;
+  color: #9CA3AF;
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.doc-processing-bar__node--done {
+  background: #16A34A;
+  border-color: #16A34A;
+  color: #fff;
+}
+
+.doc-processing-bar__node--active {
+  background: #7C3AED;
+  border-color: #7C3AED;
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.2);
+  animation: pulse-node 1.4s ease-in-out infinite;
+}
+
+.doc-processing-bar__node--pending {
+  background: #F9FAFB;
+  border-color: #E5E7EB;
+  color: #D1D5DB;
+}
+
+@keyframes pulse-node {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(124,58,237,0.2); }
+  50%       { box-shadow: 0 0 0 6px rgba(124,58,237,0.1); }
+}
+
+.doc-processing-bar__label {
+  font-size: 0.6rem;
+  color: #9CA3AF;
+  margin-top: 3px;
+  text-align: center;
+}
+
+.doc-processing-bar__label--active {
+  color: #7C3AED;
+  font-weight: 600;
+}
+
+.doc-processing-bar__line {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: #E5E7EB;
+  z-index: 0;
+  transition: background 0.3s ease;
+}
+
+.doc-processing-bar__line--done {
+  background: #16A34A;
+}
+
+/* Mobile processing bar — compact */
+@media (max-width: 480px) {
+  .doc-processing-bar__label { font-size: 0.55rem; }
+  .doc-processing-bar__node  { width: 18px; height: 18px; font-size: 0.55rem; }
+}
