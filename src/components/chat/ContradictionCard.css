@@ -1,0 +1,208 @@
+/* ── Container ──────────────────────────────────────────────────── */
+.contradiction-card {
+  position: relative;
+  margin: 8px 0;
+  border: 1.5px solid #DDD6FE;
+  border-radius: 12px;
+  background: #FDFCFF;
+  overflow: hidden;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.contradiction-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px 8px;
+  background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
+  border-bottom: 1px solid #DDD6FE;
+}
+
+.contradiction-card__icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+.contradiction-card__header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.contradiction-card__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #5B21B6;
+  letter-spacing: 0.01em;
+}
+
+.contradiction-card__topic {
+  font-size: 0.72rem;
+  color: #7C3AED;
+  font-style: italic;
+}
+
+/* ── Two-column sides ───────────────────────────────────────────── */
+.contradiction-card__sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  position: relative;
+}
+
+/* ── "vs" divider ───────────────────────────────────────────────── */
+.contradiction-card__vs {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  background: #7C3AED;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  z-index: 2;
+  box-shadow: 0 0 0 3px #FDFCFF;
+  /* Position relative to sides grid */
+  top: auto;
+  left: auto;
+  position: relative;
+  margin: -14px auto;
+  pointer-events: none;
+}
+
+/* Override — absolute inside the sides container */
+.contradiction-card__sides {
+  position: relative;
+}
+.contradiction-card__vs {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+}
+
+/* ── Each side ──────────────────────────────────────────────────── */
+.contradiction-card__side {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contradiction-card__side:first-child {
+  border-right: 1px solid #EDE9FE;
+  background: rgba(239,246,255,0.4);
+}
+.contradiction-card__side:last-child {
+  background: rgba(254,242,242,0.35);
+}
+
+.contradiction-card__side-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9CA3AF;
+}
+
+.contradiction-card__side-doc {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.contradiction-card__side-filename {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #1F2937;
+  word-break: break-all;
+}
+
+.contradiction-card__side-page {
+  font-size: 0.68rem;
+  color: #6B7280;
+}
+
+.contradiction-card__side-conf {
+  font-size: 0.68rem;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.contradiction-card__side-stance {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  font-style: italic;
+  margin: 0;
+  line-height: 1.4;
+  border-left: 2px solid #7C3AED;
+  padding-left: 6px;
+}
+
+.contradiction-card__side-snippet {
+  font-size: 0.73rem;
+  color: #6B7280;
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.contradiction-card__view-btn {
+  background: none;
+  border: 1px solid #DDD6FE;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  color: #7C3AED;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.1s, border-color 0.1s;
+  align-self: flex-start;
+  margin-top: auto;
+}
+.contradiction-card__view-btn:hover {
+  background: #F5F3FF;
+  border-color: #7C3AED;
+}
+
+/* ── Explanation footer ─────────────────────────────────────────── */
+.contradiction-card__explanation {
+  font-size: 0.72rem;
+  color: #6B7280;
+  font-style: italic;
+  margin: 0;
+  padding: 8px 14px 12px;
+  border-top: 1px solid #EDE9FE;
+  line-height: 1.5;
+  background: #FDFCFF;
+}
+
+/* Responsive — stack on very narrow panels */
+@media (max-width: 380px) {
+  .contradiction-card__sides { grid-template-columns: 1fr; }
+  .contradiction-card__side:first-child { border-right: none; border-bottom: 1px solid #EDE9FE; }
+  .contradiction-card__vs { display: none; }
+}
+
+/* Mobile contradiction card — stack vertically */
+@media (max-width: 600px) {
+  .contradiction-card__sides {
+    grid-template-columns: 1fr;
+  }
+  .contradiction-card__side:first-child {
+    border-right: none;
+    border-bottom: 1px solid #EDE9FE;
+  }
+  .contradiction-card__vs { display: none; }
+  .contradiction-card__side { padding: 10px 12px; }
+}

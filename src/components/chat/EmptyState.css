@@ -1,0 +1,139 @@
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 32px;
+  max-width: 420px;
+  margin: auto;
+  height: 100%;
+  gap: 12px;
+}
+
+.empty-state__icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.empty-state__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.empty-state__body {
+  font-size: 0.875rem;
+  color: #6B7280;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.empty-state__body em {
+  font-style: italic;
+  color: #374151;
+}
+
+.empty-state__hint {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  margin: 0;
+}
+
+/* CTA button */
+.empty-state__cta {
+  background: #7C3AED;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: 4px;
+}
+.empty-state__cta:hover { background: #6D28D9; }
+
+.empty-state__cta--ghost {
+  background: none;
+  color: #6B7280;
+  border: 1px solid #E5E7EB;
+}
+.empty-state__cta--ghost:hover { background: #F9FAFB; color: #374151; }
+
+.empty-state__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Error variant */
+.empty-state--error .empty-state__title { color: #DC2626; }
+.empty-state__error-detail {
+  font-size: 0.8rem;
+  color: #EF4444;
+  display: block;
+  margin-top: 4px;
+}
+
+/* Doc badges */
+.empty-state__doc-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.empty-state__doc-badge {
+  background: #F3F0FF;
+  color: #5B21B6;
+  border: 1px solid #DDD6FE;
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty-state__doc-badge--more {
+  background: #F9FAFB;
+  color: #6B7280;
+  border-color: #E5E7EB;
+}
+
+/* Suggestion chips */
+.empty-state__suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.empty-state__suggestion {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  color: #6B7280;
+  cursor: default;
+}
+
+/* Mobile empty states */
+@media (max-width: 480px) {
+  .empty-state { padding: 32px 20px; }
+  .empty-state__doc-badges { gap: 4px; }
+  .empty-state__doc-badge {
+    font-size: 0.7rem;
+    padding: 2px 10px;
+  }
+  .empty-state__suggestions { display: none; }
+}
