@@ -1,0 +1,15 @@
+.answer-footer {
+  border-top: 1px solid var(--color-border);
+  padding: 10px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; flex-wrap: wrap;
+}
+.answer-footer__state { display: flex; align-items: center; gap: 7px; }
+.answer-footer__icon {
+  width: 17px; height: 17px; border-radius: 50%;
+  border: 1.5px solid; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.answer-footer__label { font-size: 11px; font-style: italic; font-weight: 500; }
+.answer-footer__meta { display: flex; align-items: center; gap: 8px; }
+.answer-footer__meta span { font-size: 10px; color: var(--color-text-light); }
+.answer-footer__sep { color: var(--color-text-xlight) !important; }

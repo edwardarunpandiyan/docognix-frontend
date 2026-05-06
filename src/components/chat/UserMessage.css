@@ -1,0 +1,43 @@
+.user-msg {
+  display: flex;
+  justify-content: flex-end;
+}
+.user-msg__bubble {
+  max-width: 58%;
+  background: var(--color-black);
+  color: #fff;
+  border-radius: 12px 12px 2px 12px;
+  padding: 11px 16px;
+  font-size: 14px;
+  line-height: 1.65;
+  word-break: break-word;
+}
+@media (max-width: 480px) {
+  .user-msg__bubble { max-width: 86%; }
+}
+
+.user-msg__time {
+  display: block;
+  text-align: right;
+  font-size: 0.68rem;
+  color: #9CA3AF;
+  margin-top: 3px;
+  padding-right: 2px;
+  cursor: default;
+  transition: opacity 0.15s;
+}
+.user-msg:not(:hover) .user-msg__time { opacity: 0; }
+.user-msg:hover       .user-msg__time { opacity: 1; }
+
+/* Mobile user message */
+@media (max-width: 480px) {
+  .user-msg__bubble {
+    max-width: 88%;
+    font-size: 0.875rem;
+  }
+}
+
+/* Always show timestamp on mobile (no hover) */
+@media (max-width: 768px) {
+  .user-msg__time { opacity: 1; }
+}
