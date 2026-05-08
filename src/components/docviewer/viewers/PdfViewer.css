@@ -1,0 +1,59 @@
+.pdf-viewer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #e2e8f0;
+  overflow-y: auto;
+  position: relative;
+}
+
+.pdf-viewer__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(241, 245, 249, 0.95);
+  z-index: 10;
+}
+.pdf-viewer__overlay--err { background: #fef2f2; color: #dc2626; font-size: 13px; }
+.pdf-viewer__overlay-text { font-size: 12px; color: var(--color-text-base); }
+
+.pdf-viewer__spinner {
+  width: 22px; height: 22px;
+  border: 2.5px solid #e5e7eb;
+  border-top-color: #7C3AED;
+  border-radius: 50%;
+  animation: pdf-spin 0.7s linear infinite;
+}
+@keyframes pdf-spin { to { transform: rotate(360deg); } }
+
+/* Canvas scroll area */
+.pdf-viewer__canvas-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 12px 40px;
+  gap: 16px;
+}
+
+/* Per-page wrapper — NO explicit size; canvas dimensions drive layout */
+.pdf-page-wrapper {
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
+  border-radius: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+  line-height: 0;    /* remove inline-block gap */
+  max-width: 100%;
+}
+
+/* Canvas scales down to fit panel width, height follows aspect ratio */
+.pdf-page-wrapper canvas {
+  display: block;
+  width: 100%;          /* fill wrapper width */
+  height: auto;         /* maintain aspect ratio */
+  max-width: 100%;
+}

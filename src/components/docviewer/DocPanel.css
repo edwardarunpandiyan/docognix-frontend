@@ -1,0 +1,36 @@
+.doc-panel {
+  display: flex; flex-direction: column;
+  width: 0; min-width: 0;
+  border-left: 1px solid transparent;
+  background: var(--color-white);
+  overflow: hidden;
+  transition: width var(--transition-panel), min-width var(--transition-panel), border-color var(--transition-panel);
+  flex-shrink: 0;
+}
+.doc-panel.open {
+  width: var(--panel-width);
+  min-width: var(--panel-width);
+  border-left-color: var(--color-border);
+}
+@media (max-width: 1023px) {
+  .doc-panel {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 30;
+    box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+    border-left-color: var(--color-border);
+  }
+  .doc-panel.open { width: 100vw; min-width: 100vw; }
+}
+
+/* Mobile doc panel — full screen overlay */
+@media (max-width: 768px) {
+  .doc-panel {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 0;
+    z-index: 50;
+  }
+  .doc-panel.open {
+    width: 100vw;
+    min-width: 100vw;
+  }
+}
