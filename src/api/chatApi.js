@@ -192,8 +192,13 @@ export async function apiStreamChat(
 
     const reader  = res.body.getReader()
     const decoder = new TextDecoder()
-    let buf       = ''
-    let lastEvent = ''
+    let buf        = ''
+    let lastEvent  = ''
+    // Guard: track whether the 'done' event with payload has already fired.
+    // The stream may send both a `done` JSON event AND a trailing `[DONE]`
+    // sentinel — without this flag the sentinel would call onDone() a second
+    // time with no payload, resetting latencyMs to 0 in state and IDB.
+    let doneFired  = false
 
     while (true) {
       const { done, value } = await reader.read()
@@ -211,15 +216,19 @@ export async function apiStreamChat(
         if (!line.startsWith('data: ')) continue
 
         const raw = line.slice(6).trim()
-        if (!raw || raw === '[DONE]') { onDone?.(); return }
+        // [DONE] sentinel — only fire onDone if the real done event never came
+        if (!raw || raw === '[DONE]') {
+          if (!doneFired) { doneFired = true; onDone?.() }
+          return
+        }
 
         try {
           const payload = JSON.parse(raw)
           switch (lastEvent || payload.type) {
-            case 'meta':    onMeta?.(payload);                                break
-            case 'sources': onSources?.(payload.sources ?? []);               break
-            case 'token':   onToken?.(payload.content ?? '');                 break
-            case 'done':    onDone?.(payload);                                break
+            case 'meta':    onMeta?.(payload);                                 break
+            case 'sources': onSources?.(payload.sources ?? []);                break
+            case 'token':   onToken?.(payload.content ?? '');                  break
+            case 'done':    doneFired = true; onDone?.(payload);               break
             case 'title':   onTitle?.(payload.title, payload.conversation_id); break
             case 'error':   onError?.(new Error(payload.message ?? 'Stream error')); return
             default:        break
@@ -228,7 +237,8 @@ export async function apiStreamChat(
         } catch { /* malformed line — skip */ }
       }
     }
-    onDone?.()
+    // Stream ended without any done signal — fire fallback
+    if (!doneFired) onDone?.()
   } catch (err) {
     if (err.name !== 'AbortError') onError?.(err)
   }

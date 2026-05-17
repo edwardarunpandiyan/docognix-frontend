@@ -156,29 +156,42 @@ export function useSessionChat(
         )
       ),
 
-      // Merge latencyMs, chunksUsed, state into metadata on completion
+      // Merge latencyMs, chunksUsed, state into metadata on completion.
+      // NOTE: IDB save is intentionally done OUTSIDE setMessages — side effects
+      // inside React state updaters are unsafe (updater may run multiple times
+      // in concurrent mode). We capture the final message in a variable so the
+      // async IDB write always sees the correct, post-update value.
       onDone: async (payload) => {
+        let finalMsg = null
+
         setMessages(prev => {
-          const final = prev.map(m => {
+          const next = prev.map(m => {
             if (m.id !== aId) return m
             const meta    = m.metadata ?? {}
             const sources = meta.sources ?? []
             const conf    = payload?.confidence ?? 'medium'
-            return {
+            finalMsg = {
               ...m, streaming: false,
               metadata: {
                 ...meta,
                 state:      confidenceToState(conf),
-                latencyMs:  payload?.latency_ms ?? 0,
+                // payload is undefined when stream ends without a done event;
+                // fall back to 0 only in that case — never when payload exists.
+                latencyMs:  payload != null ? (payload.latency_ms ?? 0) : (meta.latencyMs ?? 0),
                 chunksUsed: sources.length,
                 confidence: conf,
               },
             }
+            return finalMsg
           })
-          const saved = final.find(m => m.id === aId)
-          if (saved) dbPutMessage(saved).catch(console.warn)
-          return final
+          return next
         })
+
+        // Persist to IDB after state is committed, outside the updater closure
+        if (finalMsg) {
+          dbPutMessage(finalMsg).catch(console.warn)
+        }
+
         setIsSending(false)
       },
 
