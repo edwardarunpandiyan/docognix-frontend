@@ -77,3 +77,37 @@
   .msg-input__hint { display: none; } /* Too much text on small screens */
   .msg-input__field { font-size: 16px; } /* Prevents iOS zoom */
 }
+
+/* ── Document processing / blocked state ──────────────────────────── */
+.msg-input__bar--blocked {
+  background: #F9FAFB;
+  border-color: #E5E7EB;
+  cursor: not-allowed;
+}
+.msg-input__bar--blocked .msg-input__field {
+  cursor: not-allowed;
+  color: var(--color-text-light);
+}
+
+/* Replaces the old .msg-input__progress — unified upload + processing bar */
+.msg-input__processing {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+  margin-bottom: 4px;
+}
+.msg-input__processing-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #E5E7EB;
+  border-top-color: #7C3AED;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+.msg-input__processing-label {
+  font-size: .75rem;
+  color: #6B7280;
+  white-space: nowrap;
+}

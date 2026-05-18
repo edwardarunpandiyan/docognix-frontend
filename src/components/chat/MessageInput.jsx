@@ -1,9 +1,10 @@
 /**
  * MessageInput
  * ─────────────
- * - Enter sends, Shift+Enter = new line (already correct)
+ * - Enter sends, Shift+Enter = new line
  * - forwardRef exposes triggerUpload() for empty state CTA
  * - Drag-drop, validation, progress, cancel stream/upload
+ * - Blocked (textarea + send disabled) until at least one doc is ready
  */
 import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react'
 import './MessageInput.css'
@@ -13,6 +14,7 @@ import { validateFile, pickAllowedFile } from '../../utils/fileValidation.js'
 export const MessageInput = forwardRef(function MessageInput({
   onSend, onUpload, onCancelUpload, onCancelStream,
   disabled, isUploading, uploadProgress = 0, isSending,
+  hasReadyDoc = false, isProcessing = false,
 }, ref) {
   const [value,    setValue]    = useState('')
   const [dragOver, setDragOver] = useState(false)
@@ -22,7 +24,6 @@ export const MessageInput = forwardRef(function MessageInput({
   const errTimer = useRef(null)
 
   // Expose triggerUpload() to parent via ref
-  // Used by NoDocumentsState CTA button
   useImperativeHandle(ref, () => ({
     triggerUpload: () => fileRef.current?.click(),
   }))
@@ -34,17 +35,18 @@ export const MessageInput = forwardRef(function MessageInput({
     return () => clearTimeout(errTimer.current)
   }, [banner])
 
-  // Enter = send, Shift+Enter = new line
+  // Textarea and send are blocked until a doc is ready
+  const inputBlocked = isProcessing || !hasReadyDoc
+
   const submit = useCallback(() => {
     const t = value.trim()
-    if (!t || disabled || isUploading) return
+    if (!t || disabled || isUploading || inputBlocked) return
     onSend(t); setValue('')
     if (textRef.current) textRef.current.style.height = 'auto'
-  }, [value, disabled, isUploading, onSend])
+  }, [value, disabled, isUploading, inputBlocked, onSend])
 
   const onKeyDown = e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() }
-    // Shift+Enter: default textarea behaviour (new line) — no handling needed
   }
 
   const onInput = e => {
@@ -73,6 +75,17 @@ export const MessageInput = forwardRef(function MessageInput({
     const f = pickAllowedFile(e.dataTransfer.files); if (f) await handleFile(f)
   }, [handleFile])
 
+  // Derive the processing stage label from upload/processing state
+  const processingLabel = isUploading
+    ? `Uploading${uploadProgress > 0 ? ` ${uploadProgress}%` : '…'}`
+    : 'Processing document — please wait…'
+
+  const placeholderText = isUploading
+    ? 'Uploading…'
+    : isProcessing
+      ? 'Waiting for document to be ready…'
+      : 'Message Docognix…'
+
   return (
     <div
       className={`msg-input${dragOver ? ' msg-input--drag' : ''}`}
@@ -92,21 +105,27 @@ export const MessageInput = forwardRef(function MessageInput({
         </div>
       )}
 
-      {isUploading && (
-        <div className="msg-input__progress">
-          <div className="msg-input__progress-track">
-            <div className="msg-input__progress-fill" style={{ width: `${uploadProgress}%` }} />
-          </div>
-          <span className="msg-input__progress-label">
-            Uploading{uploadProgress > 0 ? ` ${uploadProgress}%` : '…'}
-          </span>
-          {onCancelUpload && (
-            <button className="msg-input__progress-cancel" onClick={onCancelUpload}>Cancel</button>
+      {/* Processing / upload status bar — shown while any doc is not yet ready */}
+      {(isUploading || isProcessing) && (
+        <div className="msg-input__processing">
+          <span className="msg-input__processing-spinner" aria-hidden />
+          {isUploading ? (
+            <>
+              <div className="msg-input__progress-track">
+                <div className="msg-input__progress-fill" style={{ width: `${uploadProgress}%` }} />
+              </div>
+              <span className="msg-input__processing-label">{processingLabel}</span>
+              {onCancelUpload && (
+                <button className="msg-input__progress-cancel" onClick={onCancelUpload}>Cancel</button>
+              )}
+            </>
+          ) : (
+            <span className="msg-input__processing-label">{processingLabel}</span>
           )}
         </div>
       )}
 
-      <div className="msg-input__bar">
+      <div className={`msg-input__bar${inputBlocked ? ' msg-input__bar--blocked' : ''}`}>
         <button className="msg-input__icon-btn" type="button"
           title="Attach file (PDF, DOCX, TXT)"
           disabled={isUploading} onClick={() => fileRef.current?.click()}>
@@ -117,9 +136,10 @@ export const MessageInput = forwardRef(function MessageInput({
         <textarea
           ref={textRef}
           className="msg-input__field"
-          placeholder={isUploading ? 'Uploading…' : 'Message Docognix…'}
+          placeholder={placeholderText}
           value={value} onChange={onInput} onKeyDown={onKeyDown}
-          rows={1} aria-label="Message input" disabled={isUploading}
+          rows={1} aria-label="Message input"
+          disabled={isUploading || inputBlocked}
         />
 
         {isSending && onCancelStream && (
@@ -127,13 +147,15 @@ export const MessageInput = forwardRef(function MessageInput({
             title="Stop generating" aria-label="Stop generating">■</button>
         )}
         <button className="msg-input__send" type="button" onClick={submit}
-          disabled={!value.trim() || disabled} aria-label="Send message">
+          disabled={!value.trim() || disabled || inputBlocked} aria-label="Send message">
           <Send />
         </button>
       </div>
 
       <p className="msg-input__hint" aria-hidden>
-        Enter to send &nbsp;·&nbsp; Shift+Enter for new line &nbsp;·&nbsp; Drop PDF · DOCX · TXT to upload
+        {inputBlocked
+          ? 'Querying will be enabled once the document is ready'
+          : 'Enter to send \u00A0·\u00A0 Shift+Enter for new line \u00A0·\u00A0 Drop PDF · DOCX · TXT to upload'}
       </p>
     </div>
   )
