@@ -48,24 +48,25 @@ export function NoDocumentsState({ onUploadClick }) {
 
 // ── Documents uploaded but no messages ────────────────────────────
 export function ReadyToAskState({ documents }) {
+  const readyDocs = documents.filter(d => d.status === 'ready')
   return (
     <div className="empty-state">
       <div className="empty-state__doc-badges">
-        {documents.slice(0, 3).map(d => (
+        {readyDocs.slice(0, 3).map(d => (
           <span key={d.id} className="empty-state__doc-badge">
             {getFileEmoji(d.filename)} {d.filename}
           </span>
         ))}
-        {documents.length > 3 && (
+        {readyDocs.length > 3 && (
           <span className="empty-state__doc-badge empty-state__doc-badge--more">
-            +{documents.length - 3} more
+            +{readyDocs.length - 3} more
           </span>
         )}
       </div>
       <h3 className="empty-state__title">
-        {documents.length === 1
+        {readyDocs.length === 1
           ? 'Document ready — ask anything'
-          : `${documents.length} documents ready — ask anything`}
+          : `${readyDocs.length} documents ready — ask anything`}
       </h3>
       <p className="empty-state__body">
         Try: <em>"Summarise this document"</em> or <em>"What does it say about X?"</em>

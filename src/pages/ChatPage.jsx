@@ -80,6 +80,8 @@ export function ChatPage({
   const hasMessages = messages.filter(m => !m.streaming).length > 0
   const hasDocs     = documents.length > 0
   const hasReadyDoc = documents.some(d => d.status === 'ready' || d.status === DOC_STATUS.READY)
+  // True when docs exist but none are ready yet (still uploading/processing/chunking)
+  const isProcessing = hasDocs && !hasReadyDoc
   const showNoDoc   = !isLoadingData && !hasDocs && !hasMessages
   const showReady   = !isLoadingData && hasReadyDoc && !hasMessages
   const showChat    = isLoadingData || hasMessages
@@ -135,7 +137,8 @@ export function ChatPage({
           isUploading={isUploading}
           uploadProgress={uploadProgress}
           isSending={isSending}
-          hasReadyDoc={documents.some(d => d.status === 'ready' || d.status === DOC_STATUS.READY)}
+          hasReadyDoc={hasReadyDoc}
+          isProcessing={isProcessing}
         />
       </div>
 
