@@ -21,6 +21,8 @@ import { NoDocumentsState, ReadyToAskState } from '../components/chat/EmptyState
 import { useSessionChat }   from '../hooks/useSessionChat.js'
 import { useDocPanel }      from '../hooks/useDocPanel.js'
 import { useDocProcessing } from '../hooks/useDocProcessing.js'
+import { usePageDrop }      from '../hooks/usePageDrop.js'
+import { validateFile }     from '../utils/fileValidation.js'
 import { exportConversation } from '../utils/exportConversation.js'
 import { DOC_STATUS }      from '../constants/index.js'
 
@@ -58,6 +60,14 @@ export function ChatPage({
   // ── Doc processing polling ────────────────────────────────────────
   useDocProcessing(documents, conversationId, updateDocumentStatus)
 
+  // ── Page-level drag and drop ──────────────────────────────────────
+  const handleDroppedFile = async (file) => {
+    const result = await validateFile(file)
+    if (!result.valid) return          // MessageInput shows its own banner; page drop silently ignores invalid
+    await uploadDoc(file)
+  }
+  const { isDragging, pageDropProps } = usePageDrop(handleDroppedFile, isUploading)
+
   // ── Close doc panel on conversation change ────────────────────────
   useEffect(() => { panel.close() }, [conversationId]) // eslint-disable-line
 
@@ -80,15 +90,22 @@ export function ChatPage({
   const hasMessages = messages.filter(m => !m.streaming).length > 0
   const hasDocs     = documents.length > 0
   const hasReadyDoc = documents.some(d => d.status === 'ready' || d.status === DOC_STATUS.READY)
-  // True when docs exist but none are ready yet (still uploading/processing/chunking)
-  const isProcessing = hasDocs && !hasReadyDoc
   const showNoDoc   = !isLoadingData && !hasDocs && !hasMessages
   const showReady   = !isLoadingData && hasReadyDoc && !hasMessages
   const showChat    = isLoadingData || hasMessages
 
   return (
     <>
-      <div className="chat-page">
+      <div className="chat-page" {...pageDropProps}>
+        {isDragging && (
+          <div className="chat-page__drop-overlay" aria-hidden>
+            <div className="chat-page__drop-card">
+              <span style={{ fontSize: '2.5rem' }}>📂</span>
+              <span className="chat-page__drop-title">Drop to upload document</span>
+              <span className="chat-page__drop-sub">PDF, DOCX, or TXT · Max 50 MB</span>
+            </div>
+          </div>
+        )}
         <ChatHeader
           title={title}
           docCount={documents.length}
@@ -137,8 +154,7 @@ export function ChatPage({
           isUploading={isUploading}
           uploadProgress={uploadProgress}
           isSending={isSending}
-          hasReadyDoc={hasReadyDoc}
-          isProcessing={isProcessing}
+          hasReadyDoc={documents.some(d => d.status === 'ready' || d.status === DOC_STATUS.READY)}
         />
       </div>
 

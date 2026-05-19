@@ -29,3 +29,43 @@
   justify-content: center;
   overflow: hidden;
 }
+
+/* ── Page-level drag-and-drop overlay ─────────────────────────────── */
+.chat-page__drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(124, 58, 237, 0.08);
+  backdrop-filter: blur(2px);
+  border: 3px dashed #7C3AED;
+  pointer-events: none;
+  animation: dropFadeIn 0.12s ease;
+}
+.chat-page__drop-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1.5px solid #DDD6FE;
+  border-radius: 16px;
+  padding: 32px 48px;
+  box-shadow: 0 8px 32px rgba(124,58,237,0.15);
+  pointer-events: none;
+}
+.chat-page__drop-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #7C3AED;
+}
+.chat-page__drop-sub {
+  font-size: 0.8rem;
+  color: #6B7280;
+}
+@keyframes dropFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
