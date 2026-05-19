@@ -1,36 +1,50 @@
+/* ── DocPanel shell ────────────────────────────────────────────────
+   .doc-panel is a flex child in a ROW flex container (.chat-body).
+   It must be a flex COLUMN so .doc-list can use flex:1 to fill it.
+   min-height: 0 is mandatory — without it the flex container won't
+   constrain height and overflow-y on .doc-list__items never fires.
+──────────────────────────────────────────────────────────────────── */
 .doc-panel {
-  display: flex; flex-direction: column;
-  width: 0; min-width: 0;
+  display: flex;
+  flex-direction: column;
+  width: 0;
+  min-width: 0;
+  min-height: 0;
   border-left: 1px solid transparent;
   background: var(--color-white);
   overflow: hidden;
-  transition: width var(--transition-panel), min-width var(--transition-panel), border-color var(--transition-panel);
   flex-shrink: 0;
+  transition: width var(--transition-panel),
+              min-width var(--transition-panel),
+              border-color var(--transition-panel);
 }
 .doc-panel.open {
   width: var(--panel-width);
   min-width: var(--panel-width);
   border-left-color: var(--color-border);
 }
+
+/* Tablet: slide-over */
 @media (max-width: 1023px) {
   .doc-panel {
-    position: fixed; top: 0; right: 0; bottom: 0; z-index: 30;
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    z-index: 30;
+    height: 100dvh;
     box-shadow: -4px 0 24px rgba(0,0,0,0.12);
     border-left-color: var(--color-border);
   }
   .doc-panel.open { width: 100vw; min-width: 100vw; }
 }
 
-/* Mobile doc panel — full screen overlay */
+/* Mobile: full-screen overlay */
 @media (max-width: 768px) {
   .doc-panel {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     width: 0;
+    height: 100dvh;
     z-index: 50;
   }
-  .doc-panel.open {
-    width: 100vw;
-    min-width: 100vw;
-  }
+  .doc-panel.open { width: 100vw; min-width: 100vw; }
 }

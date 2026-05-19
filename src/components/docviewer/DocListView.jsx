@@ -103,12 +103,6 @@ export function DocListView({ documents, onOpenDoc, onClose }) {
           })
         )}
       </div>
-
-      {/* Footer */}
-      <div className="doc-list__footer">
-        {documents.length} document{documents.length !== 1 ? 's' : ''}
-        {query && filtered.length !== documents.length && ` · ${filtered.length} shown`}
-      </div>
     </div>
   )
 }

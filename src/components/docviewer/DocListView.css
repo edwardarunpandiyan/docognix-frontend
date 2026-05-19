@@ -1,75 +1,116 @@
-.doc-list { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+/* ─── Doc List View ────────────────────────────────────────────────
+   Layout goal:
+     .doc-list fills .doc-panel completely  →  flex: 1 (not height:100%)
+     .doc-list__items is the ONLY scrolling region
+     topbar / search are fixed height, flex-shrink: 0
+   Scroll chain (every ancestor must have min-height: 0):
+     .doc-panel (min-height:0) → .doc-list (min-height:0) → .doc-list__items (min-height:0, overflow-y:auto)
+──────────────────────────────────────────────────────────────────── */
+
+/* Root — flex:1 fills parent; flex col so children stack vertically */
+.doc-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;     /* critical: lets flex cap height so items can scroll */
+  overflow: hidden;
+}
+
+/* ── Topbar ── */
 .doc-list__topbar {
-  height: var(--header-height); min-height: var(--header-height);
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 14px; border-bottom: 1px solid var(--color-border);
-  background: var(--color-white); flex-shrink: 0;
+  height: var(--header-height);
+  min-height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-white);
+  flex-shrink: 0;
 }
 .doc-list__title-row { display: flex; align-items: center; gap: 7px; }
-.doc-list__title { font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600; color: var(--color-text-dark); }
+.doc-list__title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+}
 .doc-list__close-btn {
-  width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--color-border);
-  background: var(--color-white); display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: var(--color-text-base);
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--color-text-base);
   transition: background var(--transition-fast);
 }
 .doc-list__close-btn:hover { background: var(--color-bg); }
 
+/* ── Search ── */
 .doc-list__search {
-  padding: 10px 14px; border-bottom: 1px solid var(--color-border);
-  background: #FAFAFA; flex-shrink: 0;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border);
+  background: #FAFAFA;
+  flex-shrink: 0;
 }
 .doc-list__search-box {
   display: flex; align-items: center; gap: 7px;
-  background: var(--color-white); border: 1px solid var(--color-border);
-  border-radius: 7px; padding: 7px 10px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  padding: 7px 10px;
   transition: border-color var(--transition-fast);
 }
 .doc-list__search-box:focus-within { border-color: var(--color-black); }
 .doc-list__search-input {
-  flex: 1; font-size: 12px; color: var(--color-text-dark);
+  flex: 1;
+  font-size: 12px;
+  color: var(--color-text-dark);
   background: none; border: none; outline: none;
 }
 .doc-list__search-input::placeholder { color: var(--color-text-light); }
 .doc-list__search-clear {
-  width: 16px; height: 16px; border-radius: 50%;
-  background: var(--color-border); border: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--color-border);
+  border: none;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: var(--color-text-base); flex-shrink: 0;
+  cursor: pointer;
+  color: var(--color-text-base);
+  flex-shrink: 0;
   transition: background var(--transition-fast);
 }
 .doc-list__search-clear:hover { background: var(--color-border-mid); }
 
+/* ── Scrollable items region — THE only scroll container ── */
 .doc-list__items {
-  flex: 1; overflow-y: auto;
+  flex: 1;
+  min-height: 0;          /* without this, overflow-y:auto is ignored */
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 12px 14px;
-  display: flex; flex-direction: column; gap: 8px;
-  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* Thin purple scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #DDD6FE transparent;
 }
-.doc-list__empty { text-align: center; padding: 32px 16px; color: var(--color-text-light); font-size: 13px; }
+.doc-list__items::-webkit-scrollbar { width: 5px; }
+.doc-list__items::-webkit-scrollbar-track { background: transparent; }
+.doc-list__items::-webkit-scrollbar-thumb { background: #DDD6FE; border-radius: 10px; }
+.doc-list__items::-webkit-scrollbar-thumb:hover { background: #C4B5FD; }
 
-.doc-list__card {
-  display: flex; align-items: center; gap: 10px;
-  padding: 11px 13px; border: 1px solid var(--color-border);
-  border-radius: 9px; background: var(--color-white);
-  cursor: pointer; width: 100%; text-align: left;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-.doc-list__card:hover { border-color: var(--color-black); box-shadow: 0 0 0 2.5px rgba(17,24,39,0.07); }
-.doc-list__card-icon {
-  width: 30px; height: 36px; background: var(--color-bg); border: 1px solid var(--color-border);
-  border-radius: 5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.doc-list__card-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--color-text-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.doc-list__card-chevron { color: var(--color-text-light); flex-shrink: 0; }
-
-.doc-list__footer {
-  padding: 9px 14px; border-top: 1px solid var(--color-border);
-  background: #FAFAFA; flex-shrink: 0;
-  font-size: 10.5px; color: var(--color-text-light);
+.doc-list__empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--color-text-light);
+  font-size: 13px;
 }
 
-/* Processing chip in header */
+
+/* ── Processing chip in header ── */
 .doc-list__processing-chip {
   font-size: 0.7rem;
   color: #7C3AED;
@@ -79,14 +120,23 @@
   font-weight: 500;
   animation: pulse-badge 1.8s ease-in-out infinite;
 }
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
+}
 
-/* Card variants */
+/* ── Doc card — single definition (no duplicate rules) ── */
 .doc-list__card {
   display: flex;
   flex-direction: column;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
+  background: var(--color-white);
   overflow: hidden;
+  flex-shrink: 0;   /* cards must NOT shrink — items region scrolls instead */
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
+.doc-list__card:hover { border-color: #A78BFA; box-shadow: 0 0 0 2.5px rgba(124,58,237,0.08); }
 
 .doc-list__card-inner {
   display: flex;
@@ -103,6 +153,14 @@
 .doc-list__card-inner:hover:not(:disabled) { background: #F9FAFB; }
 .doc-list__card-inner:disabled { cursor: default; }
 
+.doc-list__card-icon {
+  width: 30px; height: 36px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
 .doc-list__card-body {
   flex: 1;
   display: flex;
@@ -110,17 +168,17 @@
   gap: 3px;
   min-width: 0;
 }
-
-.doc-list__card--processing { background: #FAFAFA; }
-.doc-list__card--failed { background: #FEF2F2; }
-.doc-list__card--failed .doc-list__card-name { color: #DC2626; }
-
-@keyframes pulse-badge {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.65; }
+.doc-list__card-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+.doc-list__card-chevron { color: var(--color-text-light); flex-shrink: 0; }
 
-/* Page count badge */
 .doc-list__card-pages {
   font-size: 0.65rem;
   color: #9CA3AF;
@@ -131,8 +189,13 @@
   flex-shrink: 0;
 }
 
-/* Mobile doc list */
+/* Card state variants */
+.doc-list__card--processing { background: #FAFAFA; }
+.doc-list__card--failed     { background: #FEF2F2; }
+.doc-list__card--failed .doc-list__card-name { color: #DC2626; }
+
+/* Mobile */
 @media (max-width: 480px) {
-  .doc-list__topbar { padding: 12px 14px; }
+  .doc-list__topbar     { padding: 12px 14px; }
   .doc-list__card-inner { padding: 10px 10px; }
 }
