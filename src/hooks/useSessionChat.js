@@ -58,6 +58,11 @@ export function useSessionChat(
   const [isSending,      setIsSending]      = useState(false)
   const [isUploading,    setIsUploading]    = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  // Multi-file queue: files waiting to be uploaded after the current one finishes
+  const [uploadQueue,    setUploadQueue]    = useState([])
+  // Which file in the batch is currently uploading (1-based for display)
+  const [uploadBatchIdx, setUploadBatchIdx] = useState(0)
+  const [uploadBatchTotal, setUploadBatchTotal] = useState(0)
   const [isLoadingData,  setIsLoadingData]  = useState(true)
   const [error,          setError]          = useState(null)
 
@@ -156,42 +161,29 @@ export function useSessionChat(
         )
       ),
 
-      // Merge latencyMs, chunksUsed, state into metadata on completion.
-      // NOTE: IDB save is intentionally done OUTSIDE setMessages — side effects
-      // inside React state updaters are unsafe (updater may run multiple times
-      // in concurrent mode). We capture the final message in a variable so the
-      // async IDB write always sees the correct, post-update value.
+      // Merge latencyMs, chunksUsed, state into metadata on completion
       onDone: async (payload) => {
-        let finalMsg = null
-
         setMessages(prev => {
-          const next = prev.map(m => {
+          const final = prev.map(m => {
             if (m.id !== aId) return m
             const meta    = m.metadata ?? {}
             const sources = meta.sources ?? []
             const conf    = payload?.confidence ?? 'medium'
-            finalMsg = {
+            return {
               ...m, streaming: false,
               metadata: {
                 ...meta,
                 state:      confidenceToState(conf),
-                // payload is undefined when stream ends without a done event;
-                // fall back to 0 only in that case — never when payload exists.
-                latencyMs:  payload != null ? (payload.latency_ms ?? 0) : (meta.latencyMs ?? 0),
+                latencyMs:  payload?.latency_ms ?? 0,
                 chunksUsed: sources.length,
                 confidence: conf,
               },
             }
-            return finalMsg
           })
-          return next
+          const saved = final.find(m => m.id === aId)
+          if (saved) dbPutMessage(saved).catch(console.warn)
+          return final
         })
-
-        // Persist to IDB after state is committed, outside the updater closure
-        if (finalMsg) {
-          dbPutMessage(finalMsg).catch(console.warn)
-        }
-
         setIsSending(false)
       },
 
@@ -261,21 +253,15 @@ export function useSessionChat(
     }
   }, [isUploading, onConversationCreated, onDocAdded])
 
-  // ── Additional upload — to existing conversation ──────────────────
-  const uploadDoc = useCallback(async (file) => {
-    if (!file || isUploading || !conversationId) return
-    uploadCtrl.current?.abort()
-    const ctrl = new AbortController()
-    uploadCtrl.current = ctrl
-    setIsUploading(true); setUploadProgress(0); setError(null)
-
+  // ── Core single-file upload (internal) ──────────────────────────
+  const _uploadSingleDoc = useCallback(async (file, ctrl) => {
+    if (!file || !conversationId) return
     try {
       const data = await apiUploadDocument(
         conversationId, file,
         pct => setUploadProgress(pct), ctrl.signal
       )
       await registerUploadedFile(data.document_id, file)
-
       const doc = {
         id: data.document_id, conversationId: data.conversation_id,
         filename: data.filename ?? file.name,
@@ -285,17 +271,48 @@ export function useSessionChat(
         status: 'processing',
         chunkCount: 0, createdAt: new Date().toISOString(),
       }
-
       setDocuments(prev => [...prev, doc])
       await dbPutDocument(doc)
       onDocAdded?.(conversationId)
       onConversationTouched?.(conversationId)
     } catch (e) {
       if (e.name !== 'AbortError') setError(e?.message ?? 'Upload failed')
-    } finally {
-      setIsUploading(false); setUploadProgress(0)
     }
-  }, [conversationId, isUploading, onDocAdded, onConversationTouched])
+  }, [conversationId, onDocAdded, onConversationTouched])
+
+  // ── Public uploadDoc — accepts one file OR an array of files ─────
+  // Files are uploaded sequentially (one at a time) so the backend's
+  // per-conversation upload lock is never hit simultaneously.
+  const uploadDoc = useCallback(async (fileOrFiles) => {
+    if (!fileOrFiles || !conversationId) return
+    const files = Array.isArray(fileOrFiles)
+      ? fileOrFiles
+      : [fileOrFiles]
+    if (!files.length) return
+
+    uploadCtrl.current?.abort()
+    const ctrl = new AbortController()
+    uploadCtrl.current = ctrl
+
+    setIsUploading(true)
+    setUploadProgress(0)
+    setError(null)
+    setUploadBatchTotal(files.length)
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        if (ctrl.signal.aborted) break
+        setUploadBatchIdx(i + 1)
+        setUploadProgress(0)
+        await _uploadSingleDoc(files[i], ctrl)
+      }
+    } finally {
+      setIsUploading(false)
+      setUploadProgress(0)
+      setUploadBatchIdx(0)
+      setUploadBatchTotal(0)
+    }
+  }, [conversationId, _uploadSingleDoc])
 
   const retryMessage = useCallback(async (failedMsg) => {
     if (!failedMsg) return
@@ -318,7 +335,7 @@ export function useSessionChat(
 
   return {
     messages, documents,
-    isSending, isUploading, uploadProgress,
+    isSending, isUploading, uploadProgress, uploadBatchIdx, uploadBatchTotal,
     isLoadingData, error,
     submitMessage, uploadFirstDoc, uploadDoc,
     retryMessage, cancelStream, cancelUpload,

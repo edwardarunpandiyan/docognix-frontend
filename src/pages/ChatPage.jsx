@@ -42,7 +42,7 @@ export function ChatPage({
     messages, documents,
     isSending, isUploading, uploadProgress,
     isLoadingData, error,
-    submitMessage, uploadDoc,
+    submitMessage, uploadDoc, uploadBatchIdx, uploadBatchTotal,
     retryMessage, cancelStream, cancelUpload,
     updateDocumentStatus, clearError,
   } = useSessionChat(
@@ -61,12 +61,21 @@ export function ChatPage({
   useDocProcessing(documents, conversationId, updateDocumentStatus)
 
   // ── Page-level drag and drop ──────────────────────────────────────
-  const handleDroppedFile = async (file) => {
-    const result = await validateFile(file)
-    if (!result.valid) return          // MessageInput shows its own banner; page drop silently ignores invalid
-    await uploadDoc(file)
+  // Handles File | File[] from usePageDrop
+  // Validation errors are silently skipped for invalid types;
+  // valid files are queued sequentially in uploadDoc.
+  const handleDroppedFiles = async (fileOrFiles) => {
+    if (!fileOrFiles) return
+    const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles]
+    const valid = []
+    for (const f of files) {
+      const result = await validateFile(f)
+      if (result.valid) valid.push(f)
+    }
+    if (valid.length === 1) await uploadDoc(valid[0])
+    else if (valid.length > 1) await uploadDoc(valid)
   }
-  const { isDragging, pageDropProps } = usePageDrop(handleDroppedFile, isUploading)
+  const { isDragging, pageDropProps } = usePageDrop(handleDroppedFiles, isUploading)
 
   // ── Close doc panel on conversation change ────────────────────────
   useEffect(() => { panel.close() }, [conversationId]) // eslint-disable-line
