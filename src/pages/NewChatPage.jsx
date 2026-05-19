@@ -17,6 +17,7 @@ import './NewChatPage.css'
 import { AppLogo }  from '../components/ui/AppLogo.jsx'
 import { Menu, Attach, FileAdd } from '../components/ui/Icons.jsx'
 import { validateFile, pickAllowedFile } from '../utils/fileValidation.js'
+import { usePageDrop }  from '../hooks/usePageDrop.js'
 
 export function NewChatPage({
   onUploadFirst,      // (file: File) => Promise<void> — provided by App
@@ -26,8 +27,7 @@ export function NewChatPage({
   uploadProgress,
 }) {
   const fileRef  = useRef(null)
-  const [dragOver,  setDragOver]  = useState(false)
-  const [fileErr,   setFileErr]   = useState(null)
+  const [fileErr, setFileErr] = useState(false)
 
   const handleFile = useCallback(async (file) => {
     if (!file || isUploading) return
@@ -42,27 +42,14 @@ export function NewChatPage({
     e.target.value = ''
   }
 
-  const onDragEnter = e => { e.preventDefault(); setDragOver(true) }
-  const onDragLeave = e => {
-    e.preventDefault()
-    if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget)) setDragOver(false)
-  }
-  const onDragOver = e => e.preventDefault()
-  const onDrop = useCallback(async e => {
-    e.preventDefault(); setDragOver(false)
-    const f = pickAllowedFile(e.dataTransfer.files)
-    if (f) await handleFile(f)
-  }, [handleFile])
+  const { isDragging, pageDropProps } = usePageDrop(handleFile, isUploading)
 
   return (
     <div
-      className={`new-chat-page${dragOver ? ' new-chat-page--drag' : ''}`}
-      onDragEnter={onDragEnter}
-      onDragLeave={onDragLeave}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
+      className={`new-chat-page${isDragging ? ' new-chat-page--drag' : ''}`}
+      {...pageDropProps}
     >
-      {dragOver && (
+      {isDragging && (
         <div className="new-chat-page__drag-overlay" aria-hidden>
           <div className="new-chat-page__drag-card">
             <span style={{ fontSize: '2.5rem' }}>📂</span>
