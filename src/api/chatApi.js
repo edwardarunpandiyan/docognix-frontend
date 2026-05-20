@@ -151,6 +151,41 @@ export async function apiGetDocumentStatus(conversationId, documentId) {
   return req(`/conversations/${conversationId}/documents/${documentId}/status`)
 }
 
+/**
+ * Fetch raw file bytes for a document and return a blob object URL.
+ *
+ * The backend returns binary (application/pdf etc.), NOT JSON — so we
+ * cannot use the req() wrapper which calls res.json(). Instead we fetch
+ * the binary, convert to a Blob, and return:
+ *   { objectUrl: string, blob: Blob }
+ *
+ * The caller should:
+ *   1. Use objectUrl immediately in the PDF viewer
+ *   2. Store blob in IDB via dbStoreBlob so the next refresh gets it
+ *      from the local blob tier without another network call
+ *
+ * Returns null if the endpoint is unavailable or raw_file is NULL on
+ * the backend (document uploaded before storage was enabled).
+ */
+export async function apiGetDocumentUrl(conversationId, documentId) {
+  assertId(conversationId, 'conversationId')
+  try {
+    const res = await fetch(
+      `${V1}/conversations/${conversationId}/documents/${documentId}/url`,
+      {
+        headers: { 'X-Anonymous-Id': getAnonymousId() },
+      }
+    )
+    if (!res.ok) return null          // 404 = no raw_file stored yet
+    const blob      = await res.blob()
+    if (!blob || blob.size === 0) return null
+    const objectUrl = URL.createObjectURL(blob)
+    return { objectUrl, blob }
+  } catch {
+    return null                       // network error — fail silently
+  }
+}
+
 // ── Messages ──────────────────────────────────────────────────────
 
 export async function apiGetMessages(conversationId) {

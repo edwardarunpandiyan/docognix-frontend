@@ -6,7 +6,7 @@ import { uid } from '../utils/helpers.js'
 import { registerUploadedFile } from '../utils/pdfRegistry.js'
 import { setAnonymousId, getAnonymousId } from '../utils/identity.js'
 import {
-  dbGetMessages, dbPutMessage, dbDeleteMessage,
+  dbGetMessages, dbPutMessage, dbDeleteMessage, dbBulkPutMessages,
   dbGetDocuments, dbPutDocument,
 } from '../utils/db.js'
 import {
@@ -37,6 +37,76 @@ function normaliseSource(src) {
     keywordScore:    src.keyword_score    ?? src.keywordScore    ?? 0,
     combinedScore:   src.combined_score   ?? src.combinedScore   ?? 0,
     bbox:            src.bbox ?? null,
+  }
+}
+
+
+// Normalise API message (snake_case) → frontend IDB shape (camelCase)
+// Backend may return: id, conversation_id, role, content, created_at, metadata
+function normaliseApiMessage(m, conversationId) {
+  // Backend uses 'message_id' not 'id'
+  const id = m.id ?? m.message_id ?? m.messageId ?? null
+  if (!id) {
+    console.warn('[SessionChat] message missing id, raw:', m)
+    return null
+  }
+
+  // API returns sources, confidence, latency_ms at the TOP LEVEL
+  // of the message — NOT nested inside a metadata object
+  const rawSources = Array.isArray(m.sources) ? m.sources : []
+  const sources    = rawSources.map(normaliseSource)
+  const conf       = m.confidence ?? null
+
+  return {
+    id,
+    conversationId: conversationId ?? m.conversation_id ?? m.conversationId,
+    role:           m.role,
+    content:        m.content ?? '',
+    createdAt:      m.created_at ?? m.createdAt ?? new Date().toISOString(),
+    streaming:      false,
+    metadata: (m.role === 'assistant')
+      ? {
+          sources,
+          latencyMs:  m.latency_ms   ?? 0,
+          chunksUsed: m.chunks_used  ?? sources.length,
+          confidence: conf ?? 'medium',
+          state:      confidenceToState(conf ?? 'medium'),
+        }
+      : null,
+  }
+}
+
+// Normalise API document (snake_case) → frontend IDB shape (camelCase)
+// Backend may return: id, conversation_id, filename, original_name,
+//   file_type, file_size, status, chunk_count, total_pages, created_at
+function normaliseApiDocument(d, conversationId) {
+  // Backend uses 'document_id' not 'id'
+  const id = d.id ?? d.document_id ?? d.documentId ?? null
+  if (!id) {
+    console.warn('[SessionChat] document missing id, raw:', d)
+    return null
+  }
+  return {
+    id,
+    conversationId:   conversationId ?? d.conversation_id ?? d.conversationId,
+    filename:         d.filename       ?? d.original_name  ?? d.originalName  ?? '',
+    originalName:     d.original_name  ?? d.originalName   ?? d.filename      ?? '',
+    fileType:         d.file_type      ?? d.fileType        ?? '',
+    fileSize:         d.file_size      ?? d.fileSize        ?? 0,
+    status:           d.status         ?? 'ready',
+    chunkCount:       d.chunk_count    ?? d.chunkCount      ?? 0,
+    // Backend returns page_count — also try total_pages for compatibility
+    totalPages:       d.page_count     ?? d.total_pages     ?? d.totalPages    ?? 0,
+    wordCount:        d.word_count     ?? d.wordCount       ?? 0,
+    createdAt:        d.created_at     ?? d.createdAt       ?? new Date().toISOString(),
+    processingError:  d.processing_error ?? d.processingError ?? null,
+    // fileUrl and fileUrlExpiresAt — backend does not return these in the
+    // list endpoint. DocContentView falls back to IDB blob → null when
+    // blob is also cleared. PDF viewing requires the user to re-upload
+    // OR a dedicated signed URL endpoint on the backend.
+    // Set null explicitly so getOrRestoreDocUrl gets no serverUrl hint.
+    fileUrl:          d.file_url        ?? d.fileUrl         ?? null,
+    fileUrlExpiresAt: d.file_url_expires_at ?? d.fileUrlExpiresAt ?? null,
   }
 }
 
@@ -88,21 +158,51 @@ export function useSessionChat(
       if (cancelled) return
       setMessages(msgs); setDocuments(docs); setIsLoadingData(false)
 
+      // ── Stale-while-revalidate + cold-cache restore ─────────────────
+      // Always fetch from API in background. When IDB was cold/cleared
+      // this is the restore path. Defensive extraction handles any
+      // backend envelope shape: { messages:[] } | { data:[] } | [] directly
       if (!cancelled) {
         try {
-          const [{ messages: sMsgs }, { documents: sDocs }] = await Promise.all([
+          const [msgsRaw, docsRaw] = await Promise.all([
             apiGetMessages(conversationId),
             apiGetDocuments(conversationId),
           ])
           if (cancelled) return
-          for (const m of sMsgs) await dbPutMessage({ ...m, conversationId })
-          for (const d of sDocs)  await dbPutDocument({ ...d, conversationId })
+
+          // Defensive extraction — handle any envelope the backend sends
+          const extractArray = (raw, ...keys) => {
+            if (Array.isArray(raw)) return raw
+            for (const k of keys) {
+              if (raw && Array.isArray(raw[k])) return raw[k]
+            }
+            console.warn('[SessionChat] unexpected API shape:', raw)
+            return []
+          }
+
+          const sMsgs = extractArray(msgsRaw,  'messages', 'data', 'items')
+          const sDocs = extractArray(docsRaw,  'documents', 'data', 'items')
+
+          // console.debug('[SessionChat] restore — msgs:', sMsgs.length, 'docs:', sDocs.length)
+          if (sMsgs.length) console.debug('[SessionChat] first msg raw:', sMsgs[0])
+          if (sDocs.length)  console.debug('[SessionChat] first doc raw:', sDocs[0])
+
+          // Normalise snake_case API shapes → camelCase IDB shapes
+          const normMsgs = sMsgs.map(m => normaliseApiMessage(m, conversationId)).filter(Boolean)
+          const normDocs = sDocs.map(d => normaliseApiDocument(d, conversationId)).filter(Boolean)
+
+          // Write to IDB in bulk (single transaction each)
+          if (normMsgs.length) await dbBulkPutMessages(normMsgs)
+          if (normDocs.length) await Promise.all(normDocs.map(d => dbPutDocument(d)))
+
           const [fm, fd] = await Promise.all([
             dbGetMessages(conversationId),
             dbGetDocuments(conversationId),
           ])
           if (!cancelled) { setMessages(fm); setDocuments(fd) }
-        } catch (e) { console.warn('[SessionChat] sync failed:', e.message) }
+        } catch (e) {
+          console.error('[SessionChat] sync failed:', e)
+        }
       }
     }
 
@@ -161,29 +261,32 @@ export function useSessionChat(
         )
       ),
 
-      // Merge latencyMs, chunksUsed, state into metadata on completion
+      // Merge latencyMs, chunksUsed, state into metadata on completion.
+      // dbPutMessage is intentionally OUTSIDE setMessages — side effects
+      // inside React state updaters are unsafe in concurrent mode.
       onDone: async (payload) => {
+        let finalMsg = null
         setMessages(prev => {
-          const final = prev.map(m => {
+          const next = prev.map(m => {
             if (m.id !== aId) return m
             const meta    = m.metadata ?? {}
             const sources = meta.sources ?? []
             const conf    = payload?.confidence ?? 'medium'
-            return {
+            finalMsg = {
               ...m, streaming: false,
               metadata: {
                 ...meta,
                 state:      confidenceToState(conf),
-                latencyMs:  payload?.latency_ms ?? 0,
+                latencyMs:  payload != null ? (payload.latency_ms ?? 0) : (meta.latencyMs ?? 0),
                 chunksUsed: sources.length,
                 confidence: conf,
               },
             }
+            return finalMsg
           })
-          const saved = final.find(m => m.id === aId)
-          if (saved) dbPutMessage(saved).catch(console.warn)
-          return final
+          return next
         })
+        if (finalMsg) dbPutMessage(finalMsg).catch(console.warn)
         setIsSending(false)
       },
 

@@ -5,7 +5,8 @@ import { useState, useEffect, useMemo } from 'react'
 import './DocContentView.css'
 import { Back, Close, DocSm, Eye } from '../ui/Icons.jsx'
 import { getConfidenceStyle } from '../../utils/helpers.js'
-import { getOrRestoreDocUrl, getDocFile } from '../../utils/pdfRegistry.js'
+import { getOrRestoreDocUrl, getDocFile, registerUploadedFile } from '../../utils/pdfRegistry.js'
+import { apiGetDocumentUrl } from '../../api/chatApi.js'
 import { PdfViewer }  from './viewers/PdfViewer.jsx'
 import { DocxViewer } from './viewers/DocxViewer.jsx'
 import { TxtViewer }  from './viewers/TxtViewer.jsx'
@@ -32,13 +33,38 @@ export function DocContentView({
     let cancelled = false
     async function resolve() {
       setIsRestoring(true)
-      const url  = await getOrRestoreDocUrl(document.id, document.fileUrl ?? null, document.fileUrlExpiresAt ?? null)
+
+      // Tier 1: memory cache, IDB signed URL, IDB blob, or doc.fileUrl hint
+      let url  = await getOrRestoreDocUrl(document.id, document.fileUrl ?? null, document.fileUrlExpiresAt ?? null)
       const file = getDocFile(document.id)
+
+      // Tier 2: IDB was cleared — fetch raw bytes from backend.
+      // Backend returns binary (not JSON), so apiGetDocumentUrl returns
+      // { objectUrl, blob }. We use objectUrl immediately and store the
+      // blob back into IDB so the next reload gets it from the local
+      // blob tier (tier 3) without another network call.
+      if (!url && document.conversationId) {
+        try {
+          const res = await apiGetDocumentUrl(document.conversationId, document.id)
+          if (res?.objectUrl) {
+            url = res.objectUrl
+            // Persist blob to IDB — registerUploadedFile stores in both
+            // the in-memory registry and the IDB blobs store
+            if (res.blob) {
+              const file = new File([res.blob], document.filename ?? 'document', {
+                type: res.blob.type,
+              })
+              await registerUploadedFile(document.id, file)
+            }
+          }
+        } catch { /* endpoint may not exist — silently skip */ }
+      }
+
       if (!cancelled) { setFileUrl(url); setFileObj(file); setIsRestoring(false) }
     }
     resolve()
     return () => { cancelled = true }
-  }, [document.id, document.fileUrl, document.fileUrlExpiresAt])
+  }, [document.id, document.conversationId, document.fileUrl, document.fileUrlExpiresAt])
 
   const fileType    = useMemo(() => getFileType(document.filename), [document.filename])
   const displayPage = page ?? matchedSource?.page ?? null
