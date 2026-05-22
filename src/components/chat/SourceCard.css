@@ -1,32 +1,110 @@
-.source-card { display: flex; align-items: flex-start; gap: 8px; }
-.source-card__dot { width: 5px; height: 5px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+/* ── SourceCard shell ───────────────────────────────────────────── */
+.source-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.source-card__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
 .source-card__box {
   flex: 1;
+  min-width: 0;         /* prevent text overflow breaking flex layout */
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: 7px;
   padding: 9px 12px;
 }
-.source-card__row { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; flex-wrap: wrap; }
+
+/* ── Header row ─────────────────────────────────────────────────── */
+.source-card__row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+}
 .source-card__name {
-  font-size: 12px; font-weight: 500;
-  text-decoration: underline; text-underline-offset: 2px;
-  cursor: pointer; background: none; border: none;
-  font-family: inherit; padding: 0;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+  padding: 0;
+  /* allow long filenames to wrap rather than overflow */
+  word-break: break-word;
+  text-align: left;
   transition: opacity 0.1s;
 }
 .source-card__name:hover { opacity: 0.7; }
-.source-card__page { font-size: 10px; color: var(--color-text-light); }
+.source-card__page { font-size: 10px; color: var(--color-text-light); white-space: nowrap; }
 .source-card__badge {
   margin-left: auto;
-  background: #F1F5F9; border: 1px solid var(--color-border);
-  border-radius: 4px; padding: 2px 7px;
+  background: #F1F5F9;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  flex-shrink: 0;
 }
 .source-card__pct { font-size: 10px; font-weight: 600; }
-.source-card__snippet { font-size: 12px; color: var(--color-text-base); margin: 0; line-height: 1.55; font-style: italic; }
+
+/* ── Snippet — clamped by default, expanded by modifier ─────────── */
+.source-card__snippet {
+  font-size: 12px;
+  color: var(--color-text-base);
+  margin: 0 0 4px 0;
+  line-height: 1.6;
+  font-style: italic;
+  word-break: break-word;
+
+  /* Desktop / tablet: clamp to 3 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.source-card__snippet--expanded {
+  /* Remove clamp — show full text */
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+/* ── Show more / Show less button ───────────────────────────────── */
+.source-card__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  color: #7C3AED;
+  font-family: inherit;
+  transition: opacity 0.15s;
+  line-height: 1.4;
+}
+.source-card__toggle:hover { opacity: 0.7; }
+.source-card__toggle:focus-visible {
+  outline: 2px solid #7C3AED;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── Coordinate tag ─────────────────────────────────────────────── */
 .source-card__bbox-tag {
   display: inline-block;
-  margin-top: 4px;
+  margin-top: 5px;
   font-size: 0.65rem;
   color: #7C3AED;
   background: rgba(124,58,237,0.08);
@@ -34,12 +112,23 @@
   padding: 1px 6px;
 }
 
-/* Mobile source cards */
-@media (max-width: 480px) {
+/* ── Tablet (641px – 1023px): clamp to 3 lines (same as desktop) ── */
+@media (max-width: 1023px) {
   .source-card__snippet {
-    display: -webkit-box;
+    -webkit-line-clamp: 3;
+  }
+}
+
+/* ── Mobile (≤ 640px): tighter clamp — 2 lines ─────────────────── */
+@media (max-width: 640px) {
+  .source-card__snippet {
     -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    font-size: 11.5px;
+  }
+  .source-card__box {
+    padding: 8px 10px;
+  }
+  .source-card__toggle {
+    font-size: 10.5px;
   }
 }

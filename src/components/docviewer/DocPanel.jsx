@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import './DocPanel.css'
 import { DocListView }    from './DocListView.jsx'
 import { DocContentView } from './DocContentView.jsx'
@@ -6,9 +7,10 @@ export function DocPanel({
   isOpen, view, activeDocId, activePage, activeSnippet, activeBbox,
   documents, messages, onOpenDoc, onShowList, onClose,
 }) {
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
   const activeDoc = documents.find(d => d.id === activeDocId) ?? null
 
-  // Find the most recent source for this doc (for confidence pill)
   const matchedSource = (() => {
     if (!activeDocId) return null
     for (let i = messages.length - 1; i >= 0; i--) {
@@ -18,10 +20,28 @@ export function DocPanel({
     return null
   })()
 
+  // Exit fullscreen automatically when user navigates back to list
+  const handleShowList = () => {
+    setIsFullscreen(false)
+    onShowList?.()
+  }
+
+  const handleClose = () => {
+    setIsFullscreen(false)
+    onClose?.()
+  }
+
   return (
-    <div className={`doc-panel${isOpen ? ' open' : ''}`} aria-hidden={!isOpen}>
+    <div
+      className={[
+        'doc-panel',
+        isOpen       ? 'open'       : '',
+        isFullscreen ? 'doc-panel--fullscreen' : '',
+      ].filter(Boolean).join(' ')}
+      aria-hidden={!isOpen}
+    >
       {isOpen && view === 'list' && (
-        <DocListView documents={documents} onOpenDoc={onOpenDoc} onClose={onClose} />
+        <DocListView documents={documents} onOpenDoc={onOpenDoc} onClose={handleClose} />
       )}
       {isOpen && view === 'doc' && activeDoc && (
         <DocContentView
@@ -30,8 +50,10 @@ export function DocPanel({
           snippet={activeSnippet}
           highlightBbox={activeBbox}
           matchedSource={matchedSource}
-          onBack={onShowList}
-          onClose={onClose}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={() => setIsFullscreen(prev => !prev)}
+          onBack={handleShowList}
+          onClose={handleClose}
         />
       )}
     </div>

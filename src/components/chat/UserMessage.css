@@ -1,7 +1,11 @@
+/* ── User message wrapper ───────────────────────────────────────── */
 .user-msg {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: flex-end;   /* right-align bubble + meta */
 }
+
+/* ── Bubble ─────────────────────────────────────────────────────── */
 .user-msg__bubble {
   max-width: 58%;
   background: var(--color-black);
@@ -12,32 +16,70 @@
   line-height: 1.65;
   word-break: break-word;
 }
-@media (max-width: 480px) {
-  .user-msg__bubble { max-width: 86%; }
+
+/* ── Meta row — copy icon + time, below bubble, right-aligned ───── */
+.user-msg__meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  padding-right: 2px;
 }
 
+/* ── Copy button ────────────────────────────────────────────────── */
+.user-msg__copy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #9CA3AF;
+  padding: 0;
+  transition: color 0.15s, opacity 0.15s;
+}
+.user-msg__copy:hover    { color: #4B5563; }
+.user-msg__copy--done    { color: #16A34A !important; }
+.user-msg__copy:focus-visible {
+  outline: 2px solid #7C3AED;
+  outline-offset: 2px;
+}
+
+/* ── Time ───────────────────────────────────────────────────────── */
 .user-msg__time {
-  display: block;
-  text-align: right;
   font-size: 0.68rem;
   color: #9CA3AF;
-  margin-top: 3px;
-  padding-right: 2px;
   cursor: default;
+  white-space: nowrap;
   transition: opacity 0.15s;
 }
-.user-msg:not(:hover) .user-msg__time { opacity: 0; }
-.user-msg:hover       .user-msg__time { opacity: 1; }
 
-/* Mobile user message */
-@media (max-width: 480px) {
+/* ── Desktop (>768px): show meta only on hover ───────────────────
+   Both copy and time fade in together on wrapper hover.           */
+@media (min-width: 769px) {
+  .user-msg__meta {
+    opacity: 0;
+  }
+  .user-msg:hover .user-msg__meta {
+    opacity: 1;
+  }
+}
+
+/* ── Tablet + Mobile (<=768px): always visible ───────────────────
+   No hover on touch screens — always show meta row.              */
+@media (max-width: 768px) {
+  .user-msg__meta {
+    opacity: 1;
+  }
   .user-msg__bubble {
-    max-width: 88%;
+    max-width: 86%;
     font-size: 0.875rem;
   }
 }
 
-/* Always show timestamp on mobile (no hover) */
-@media (max-width: 768px) {
-  .user-msg__time { opacity: 1; }
+@media (max-width: 480px) {
+  .user-msg__bubble { max-width: 88%; }
 }

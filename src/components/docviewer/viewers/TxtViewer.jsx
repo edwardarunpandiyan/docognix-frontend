@@ -65,7 +65,7 @@ async function loadText(file, url) {
   throw new Error('No source')
 }
 
-export function TxtViewer({ file, url, snippet = null }) {
+export function TxtViewer({ file, url, snippet = null, fontSize = 14, totalPages = 1, onPageChange }) {
   const viewerRef = useRef(null)
   const bodyRef   = useRef(null)
 
@@ -110,6 +110,22 @@ export function TxtViewer({ file, url, snippet = null }) {
     }, 60)
   }, [status, html])
 
+  // Live page tracking — estimate page from scroll position
+  useEffect(() => {
+    const el = bodyRef.current?.closest('.txt-viewer')
+    if (!el || !onPageChange || totalPages <= 1) return
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = el
+      const max = scrollHeight - clientHeight
+      const pct = max > 0 ? scrollTop / max : 0
+      const page = Math.min(totalPages, Math.max(1, Math.round(pct * (totalPages - 1)) + 1))
+      onPageChange(page)
+    }
+    el.addEventListener('scroll', handleScroll, { passive: true })
+    return () => el.removeEventListener('scroll', handleScroll)
+  }, [totalPages, onPageChange])
+
+
   return (
     <div className="txt-viewer" ref={viewerRef}>
       {status === 'loading' && (
@@ -125,6 +141,7 @@ export function TxtViewer({ file, url, snippet = null }) {
       <pre
         ref={bodyRef}
         className="txt-viewer__body"
+        style={{ fontSize: `${fontSize}px` }}
         dangerouslySetInnerHTML={{ __html: html }}
       />
     </div>

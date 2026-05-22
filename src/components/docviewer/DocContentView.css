@@ -142,3 +142,78 @@
     white-space: nowrap;
   }
 }
+
+/* ── Zoom controls ──────────────────────────────────────────────── */
+.doc-content__zoom {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #F9FAFB;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+.doc-content__zoom-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #6B7280;
+  padding: 0;
+  transition: background 0.1s, color 0.1s;
+}
+.doc-content__zoom-btn:hover:not(:disabled) {
+  background: #E5E7EB;
+  color: #111827;
+}
+.doc-content__zoom-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.doc-content__zoom-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  min-width: 34px;
+  text-align: center;
+  cursor: default;
+  user-select: none;
+}
+
+/* ── Fullscreen button ──────────────────────────────────────────── */
+.doc-content__fullscreen-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  cursor: pointer;
+  color: #6B7280;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+.doc-content__fullscreen-btn:hover {
+  background: #F3F4F6;
+  color: #111827;
+  border-color: #9CA3AF;
+}
+.doc-content__fullscreen-btn:focus-visible {
+  outline: 2px solid #7C3AED;
+  outline-offset: 2px;
+}
+
+/* Mobile: compact zoom label */
+@media (max-width: 480px) {
+  .doc-content__zoom-label { min-width: 28px; font-size: 10px; }
+  .doc-content__zoom-btn   { width: 20px; height: 20px; }
+}

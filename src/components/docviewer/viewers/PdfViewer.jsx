@@ -138,7 +138,7 @@ function drawTextHighlights(ctx, viewport, items, matchedSet) {
 }
 
 // ── Component ─────────────────────────────────────────────────────
-export function PdfViewer({ url, page: targetPage = 1, snippet = null, highlightBbox = null }) {
+export function PdfViewer({ url, page: targetPage = 1, snippet = null, highlightBbox = null, zoom = 1.0, onPageChange }) {
   const viewerRef = useRef(null)
   const areaRef   = useRef(null)
   const [status, setStatus] = useState('loading')
@@ -171,7 +171,7 @@ export function PdfViewer({ url, page: targetPage = 1, snippet = null, highlight
           const pdfPage = await pdf.getPage(pNum)
           if (cancelled) return
 
-          const vp = pdfPage.getViewport({ scale: 1.6 })
+          const vp = pdfPage.getViewport({ scale: 1.6 })   // fixed render scale — zoom is CSS-only
 
           const wrapper = document.createElement('div')
           wrapper.className = 'pdf-page-wrapper'
@@ -237,6 +237,38 @@ export function PdfViewer({ url, page: targetPage = 1, snippet = null, highlight
     return () => { cancelled = true }
   }, [url, snippet, targetPage, highlightBbox])
 
+  // ── Live page tracking via IntersectionObserver ─────────────────
+  // Watches all .pdf-page-wrapper elements. Whichever has the highest
+  // intersectionRatio (most visible) is the "current page".
+  useEffect(() => {
+    const area = areaRef.current
+    if (!area || !onPageChange) return
+
+    const map = new Map()   // element → page number
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(e => map.set(e.target, e.intersectionRatio))
+        let bestEl = null, bestRatio = -1
+        map.forEach((ratio, el) => {
+          if (ratio > bestRatio) { bestRatio = ratio; bestEl = el }
+        })
+        if (bestEl) {
+          const idx = Array.from(area.querySelectorAll('.pdf-page-wrapper')).indexOf(bestEl)
+          if (idx !== -1) onPageChange(idx + 1)
+        }
+      },
+      { root: viewerRef.current, threshold: Array.from({ length: 11 }, (_, i) => i / 10) }
+    )
+
+    // Observe pages once they are rendered (status = ready)
+    const pages = area.querySelectorAll('.pdf-page-wrapper')
+    pages.forEach((p, i) => { map.set(p, 0); observer.observe(p) })
+
+    return () => observer.disconnect()
+  }, [status, onPageChange])
+
+
   return (
     <div className="pdf-viewer" ref={viewerRef}>
       {status === 'loading' && (
@@ -250,7 +282,12 @@ export function PdfViewer({ url, page: targetPage = 1, snippet = null, highlight
           <span>⚠ {errMsg || 'Could not render PDF'}</span>
         </div>
       )}
-      <div ref={areaRef} className="pdf-viewer__canvas-area" />
+      {/* zoom-wrap scales the canvas without affecting scroll container size.
+           transformOrigin top-left + padding-bottom compensation lets the
+           scaled canvas expand downward/rightward into scrollable space. */}
+      <div className="pdf-viewer__zoom-wrap" style={{ transform: `scale(${zoom})`, transformOrigin: 'top left' }}>
+        <div ref={areaRef} className="pdf-viewer__canvas-area" />
+      </div>
     </div>
   )
 }
