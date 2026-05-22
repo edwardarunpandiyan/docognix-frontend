@@ -31,7 +31,19 @@
 }
 @keyframes pdf-spin { to { transform: rotate(360deg); } }
 
-/* Canvas scroll area */
+/* Zoom wrapper — transform: scale() applied here.
+   transformOrigin: top left so content expands right + down into
+   scroll space. The outer .pdf-viewer handles both-axis scrolling. */
+.pdf-viewer__zoom-wrap {
+  display: inline-block; /* shrink-wraps to canvas width */
+  min-width: 100%;
+  transform-origin: top left;
+  /* padding-bottom gives the scaled content room to breathe
+     without clipping at the bottom */
+  padding-bottom: 24px;
+}
+
+/* Canvas area — no transform here, only layout */
 .pdf-viewer__canvas-area {
   display: flex;
   flex-direction: column;

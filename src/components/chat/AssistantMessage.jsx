@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback }  from 'react'
 import './AssistantMessage.css'
-import { AppLogo }            from '../ui/AppLogo.jsx'
-import { SourceCard }         from './SourceCard.jsx'
-import { AnswerFooter }       from './AnswerFooter.jsx'
-import { ContradictionCard }  from './ContradictionCard.jsx'
+import { CopyIcon, CheckThin }    from '../ui/Icons.jsx'
+import { AppLogo }                from '../ui/AppLogo.jsx'
+import { SourceCard }             from './SourceCard.jsx'
+import { AnswerFooter }           from './AnswerFooter.jsx'
+import { ContradictionCard }      from './ContradictionCard.jsx'
 import { formatMessageTime, formatMessageTooltip } from '../../utils/time.js'
 
 export function AssistantMessage({ message, onOpenDoc, onRetry }) {
@@ -61,7 +62,7 @@ export function AssistantMessage({ message, onOpenDoc, onRetry }) {
               </p>
             </div>
 
-            {/* Contradiction card — shown instead of normal source cards */}
+            {/* Contradiction card */}
             {isContradiction && metadata?.contradiction && (
               <ContradictionCard
                 contradiction={metadata.contradiction}
@@ -69,7 +70,7 @@ export function AssistantMessage({ message, onOpenDoc, onRetry }) {
               />
             )}
 
-            {/* Normal sources — shown when not a contradiction */}
+            {/* Normal sources */}
             {!isContradiction && metadata?.sources?.length > 0 && (
               <div className="ai-msg__sources">
                 <div className="ai-msg__sources-label">Sources</div>
@@ -94,14 +95,14 @@ export function AssistantMessage({ message, onOpenDoc, onRetry }) {
               />
             )}
 
-            {/* Actions row */}
+            {/* Actions row: copy icon + time */}
             {!streaming && (
               <div className="ai-msg__actions">
                 <button
                   className={`ai-msg__copy-btn${copied ? ' ai-msg__copy-btn--done' : ''}`}
                   onClick={handleCopy} title="Copy response" aria-label="Copy response"
                 >
-                  {copied ? '✓ Copied' : 'Copy'}
+                  {copied ? <CheckThin /> : <CopyIcon />}
                 </button>
                 {time && (
                   <span className="ai-msg__time" title={tooltip} aria-label={tooltip}>{time}</span>

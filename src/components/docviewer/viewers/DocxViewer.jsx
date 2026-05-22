@@ -111,7 +111,7 @@ async function loadArrayBuffer(file, url) {
   throw new Error('No file or URL provided')
 }
 
-export function DocxViewer({ file, url, snippet = null }) {
+export function DocxViewer({ file, url, snippet = null, fontSize = 14, totalPages = 1, onPageChange }) {
   const bodyRef = useRef(null)
   const [status, setStatus] = useState('loading')
   const [errMsg, setErrMsg] = useState('')
@@ -152,6 +152,22 @@ export function DocxViewer({ file, url, snippet = null }) {
     return () => { cancelled = true }
   }, [file, url, snippet])
 
+  // Live page tracking — estimate page from scroll position
+  useEffect(() => {
+    const el = bodyRef.current?.closest('.docx-viewer')
+    if (!el || !onPageChange || totalPages <= 1) return
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = el
+      const max = scrollHeight - clientHeight
+      const pct = max > 0 ? scrollTop / max : 0
+      const page = Math.min(totalPages, Math.max(1, Math.round(pct * (totalPages - 1)) + 1))
+      onPageChange(page)
+    }
+    el.addEventListener('scroll', handleScroll, { passive: true })
+    return () => el.removeEventListener('scroll', handleScroll)
+  }, [totalPages, onPageChange])
+
+
   return (
     <div className="docx-viewer">
       {status === 'loading' && (
@@ -163,7 +179,11 @@ export function DocxViewer({ file, url, snippet = null }) {
       {status === 'error' && (
         <div className="docx-viewer__overlay docx-viewer__overlay--err">⚠ {errMsg}</div>
       )}
-      <div ref={bodyRef} className="docx-viewer__body" />
+      <div
+        ref={bodyRef}
+        className="docx-viewer__body"
+        style={{ fontSize: `${fontSize}px` }}
+      />
     </div>
   )
 }

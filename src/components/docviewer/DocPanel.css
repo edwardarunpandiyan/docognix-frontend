@@ -48,3 +48,19 @@
   }
   .doc-panel.open { width: 100vw; min-width: 100vw; }
 }
+
+/* ── Fullscreen mode (desktop only) ────────────────────────────── */
+.doc-panel--fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  min-width: 100vw !important;
+  height: 100dvh !important;
+  z-index: 100 !important;
+  border-left: none !important;
+  box-shadow: none !important;
+}
+/* Hide fullscreen toggle on tablet + mobile — already full screen there */
+@media (max-width: 1023px) {
+  .doc-content__fullscreen-btn { display: none !important; }
+}
