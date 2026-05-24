@@ -52,6 +52,11 @@ export function useDocProcessing(documents, conversationId, onDocumentUpdated) {
             const patch = {
               status,
               chunkCount: result.chunk_count ?? 0,
+              // page_count and word_count now returned by status endpoint
+              // so totalPages is available the moment a doc becomes ready —
+              // no extra API call needed.
+              totalPages: result.page_count  ?? 0,
+              wordCount:  result.word_count  ?? 0,
               ...(result.error_message ? { processingError: result.error_message } : {}),
             }
 

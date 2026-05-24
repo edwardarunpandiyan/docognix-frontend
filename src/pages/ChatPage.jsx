@@ -61,9 +61,8 @@ export function ChatPage({
   useDocProcessing(documents, conversationId, updateDocumentStatus)
 
   // ── Page-level drag and drop ──────────────────────────────────────
-  // Handles File | File[] from usePageDrop
-  // Validation errors are silently skipped for invalid types;
-  // valid files are queued sequentially in uploadDoc.
+  // Handles File | File[] from usePageDrop.
+  // Validation errors silently skipped; valid files queued in uploadDoc.
   const handleDroppedFiles = async (fileOrFiles) => {
     if (!fileOrFiles) return
     const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles]
@@ -96,12 +95,14 @@ export function ChatPage({
     exportConversation(conv, messages, documents)
   }, [conv, messages, documents])
 
-  const hasMessages = messages.filter(m => !m.streaming).length > 0
-  const hasDocs     = documents.length > 0
-  const hasReadyDoc = documents.some(d => d.status === 'ready' || d.status === DOC_STATUS.READY)
-  const showNoDoc   = !isLoadingData && !hasDocs && !hasMessages
-  const showReady   = !isLoadingData && hasReadyDoc && !hasMessages
-  const showChat    = isLoadingData || hasMessages
+  const hasMessages  = messages.filter(m => !m.streaming).length > 0
+  const hasDocs      = documents.length > 0
+  const hasReadyDoc  = documents.some(d => d.status === 'ready' || d.status === DOC_STATUS.READY)
+  // True when docs exist but none are ready yet (uploading / processing / chunking)
+  const isProcessing = hasDocs && !hasReadyDoc
+  const showNoDoc    = !isLoadingData && !hasDocs && !hasMessages
+  const showReady    = !isLoadingData && hasReadyDoc && !hasMessages
+  const showChat     = isLoadingData || hasMessages
 
   return (
     <>
@@ -115,6 +116,7 @@ export function ChatPage({
             </div>
           </div>
         )}
+
         <ChatHeader
           title={title}
           docCount={documents.length}
@@ -163,7 +165,10 @@ export function ChatPage({
           isUploading={isUploading}
           uploadProgress={uploadProgress}
           isSending={isSending}
-          hasReadyDoc={documents.some(d => d.status === 'ready' || d.status === DOC_STATUS.READY)}
+          hasReadyDoc={hasReadyDoc}
+          isProcessing={isProcessing}
+          uploadBatchIdx={uploadBatchIdx}
+          uploadBatchTotal={uploadBatchTotal}
         />
       </div>
 
