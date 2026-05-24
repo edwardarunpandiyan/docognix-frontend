@@ -7,6 +7,7 @@ import { registerUploadedFile } from '../utils/pdfRegistry.js'
 import { setAnonymousId, getAnonymousId } from '../utils/identity.js'
 import {
   dbGetMessages, dbPutMessage, dbDeleteMessage, dbBulkPutMessages,
+  dbDeleteMessagesByConversation,
   dbGetDocuments, dbPutDocument,
 } from '../utils/db.js'
 import {
@@ -183,7 +184,7 @@ export function useSessionChat(
           const sMsgs = extractArray(msgsRaw,  'messages', 'data', 'items')
           const sDocs = extractArray(docsRaw,  'documents', 'data', 'items')
 
-          // console.debug('[SessionChat] restore — msgs:', sMsgs.length, 'docs:', sDocs.length)
+          console.debug('[SessionChat] restore — msgs:', sMsgs.length, 'docs:', sDocs.length)
           if (sMsgs.length) console.debug('[SessionChat] first msg raw:', sMsgs[0])
           if (sDocs.length)  console.debug('[SessionChat] first doc raw:', sDocs[0])
 
@@ -192,7 +193,15 @@ export function useSessionChat(
           const normDocs = sDocs.map(d => normaliseApiDocument(d, conversationId)).filter(Boolean)
 
           // Write to IDB in bulk (single transaction each)
-          if (normMsgs.length) await dbBulkPutMessages(normMsgs)
+          // DEDUP FIX: clear IDB messages before writing API versions.
+          // Frontend uses uid() for temp IDs during streaming; backend stores
+          // messages with its own UUIDs. Both coexist in IDB (different keyPath
+          // values) causing duplicate display. Clear first so only canonical
+          // backend IDs remain.
+          if (normMsgs.length) {
+            await dbDeleteMessagesByConversation(conversationId)
+            await dbBulkPutMessages(normMsgs)
+          }
           if (normDocs.length) await Promise.all(normDocs.map(d => dbPutDocument(d)))
 
           const [fm, fd] = await Promise.all([
